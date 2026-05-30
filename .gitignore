@@ -1,0 +1,32 @@
+# ---> Scala
+*.class
+*.log
+
+# ---> Latex
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.synctex.gz
+*.toc
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+build
+target
+
+.metals
+.bloop
+project
+test_run_dir
+.bsp
+
+.vscode/settings.json
+*.csv
+evaluation
