@@ -101,6 +101,21 @@ class ControlUnit extends AbstractControlUnit {
           1.W
         )
       }
+      is(RISCV_OP.JAL) {
+        stalled := STALL_REASON.NO_STALL
+        io_ctrl.reg_we := true.B
+        io_ctrl.reg_write_sel := REG_WRITE_SEL.PC_PLUS_4
+        io_ctrl.next_pc_select := NEXT_PC_SELECT.IMM
+      }
+      is(RISCV_OP.JALR) {
+        stalled := STALL_REASON.NO_STALL
+        io_ctrl.reg_we := true.B
+        io_ctrl.reg_write_sel := REG_WRITE_SEL.PC_PLUS_4
+        io_ctrl.alu_control := ALU_CONTROL.ADD
+        io_ctrl.alu_op_1_sel := ALU_OP_1_SEL.RS1
+        io_ctrl.alu_op_2_sel := ALU_OP_2_SEL.IMM
+        io_ctrl.next_pc_select := NEXT_PC_SELECT.ALU_OUT_ALIGNED
+      }
     }
   }
 }
