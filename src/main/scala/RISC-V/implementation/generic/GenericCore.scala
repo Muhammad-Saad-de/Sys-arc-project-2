@@ -328,6 +328,7 @@ abstract class GenericCore(
   val mem_rdata = RegInit(0.U(32.W))
   val mem_wmask = RegInit(0.U(4.W))
   val mem_wdata = RegInit(0.U(32.W))
+  val mem_active_mask = Mux(core_data.data_req, core_data.data_be, mem_rmask)
   when(~io_reset.rst_n) {
     mem_rmask := 0.U
     mem_rdata := 0.U
@@ -347,10 +348,10 @@ abstract class GenericCore(
   }
 
   when(core_data.data_gnt & ~core_data.data_we) {
-    mem_rdata := core_data.data_rdata & (Fill(8, mem_rmask(3)) ## Fill(
+    mem_rdata := core_data.data_rdata & (Fill(8, mem_active_mask(3)) ## Fill(
       8,
-      mem_rmask(2)
-    ) ## Fill(8, mem_rmask(1)) ## Fill(8, mem_rmask(0)))
+      mem_active_mask(2)
+    ) ## Fill(8, mem_active_mask(1)) ## Fill(8, mem_active_mask(0)))
   }.elsewhen(io_rvfi.rvfi_valid) {
     mem_rdata := 0.U
   }

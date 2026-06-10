@@ -32,6 +32,14 @@ class ControlUnit extends AbstractControlUnit {
   when(was_stalled === STALL_REASON.EXECUTION_UNIT) {
     when(io_ctrl.data_gnt) {
       stalled := STALL_REASON.NO_STALL
+      when(RISCV_TYPE.getOP(io_ctrl.instr_type) === RISCV_OP.LOAD) {
+        io_ctrl.reg_we := true.B
+        io_ctrl.reg_write_sel := Mux(
+          RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(2),
+          REG_WRITE_SEL.MEM_OUT_ZERO_EXTENDED,
+          REG_WRITE_SEL.MEM_OUT_SIGN_EXTENDED
+        )
+      }
     }
   }.otherwise {
     switch(RISCV_TYPE.getOP(io_ctrl.instr_type)) {
@@ -75,7 +83,7 @@ class ControlUnit extends AbstractControlUnit {
       is(RISCV_OP.BRANCH) {
         stalled := STALL_REASON.NO_STALL
         io_ctrl.reg_we := false.B
-        io_ctrl.reg_write_sel := REG_WRITE_SEL.ALU_OUT // don't care
+        io_ctrl.reg_write_sel := REG_WRITE_SEL.ALU_OUT
         io_ctrl.alu_control := ALU_CONTROL(
           (~RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(2)) ## Fill(
             1,
@@ -115,6 +123,26 @@ class ControlUnit extends AbstractControlUnit {
         io_ctrl.alu_op_1_sel := ALU_OP_1_SEL.RS1
         io_ctrl.alu_op_2_sel := ALU_OP_2_SEL.IMM
         io_ctrl.next_pc_select := NEXT_PC_SELECT.ALU_OUT_ALIGNED
+      }
+      is(RISCV_OP.LOAD) {
+        stalled := STALL_REASON.EXECUTION_UNIT
+        io_ctrl.alu_control := ALU_CONTROL.ADD
+        io_ctrl.alu_op_1_sel := ALU_OP_1_SEL.RS1
+        io_ctrl.alu_op_2_sel := ALU_OP_2_SEL.IMM
+        io_ctrl.reg_we := false.B
+        io_ctrl.data_req := true.B
+        io_ctrl.data_we := false.B
+        io_ctrl.data_be := Fill(
+          2,
+          RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(1)
+        ) ## RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(1, 0).orR ## 1.U(
+          1.W
+        )
+        io_ctrl.reg_write_sel := Mux(
+          RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(2),
+          REG_WRITE_SEL.MEM_OUT_ZERO_EXTENDED,
+          REG_WRITE_SEL.MEM_OUT_SIGN_EXTENDED
+        )
       }
     }
   }

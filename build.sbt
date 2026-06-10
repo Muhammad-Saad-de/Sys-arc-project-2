@@ -212,7 +212,6 @@ check := {
     "RISCV.model.RISCV_OP",
     "RISCV.model.TRAP_REASON",
     "RISCV.model.PRIV_LEVEL",
-    "RISCV.model.CSR_MAPPING",
     "RISCV.model.ALU_OP_1_SEL"
   )
   val allClassesDefined = neededClasses.subsetOf(definedClasses.toSet) match {

@@ -74,6 +74,28 @@ class RV32I(
     is(REG_WRITE_SEL.PC_PLUS_4) {
       io_reg.reg_write_data := io_pc.pc + 4.U
     }
+    is(REG_WRITE_SEL.MEM_OUT_SIGN_EXTENDED) {
+      io_reg.reg_write_data := MuxCase(
+        io_data.data_rdata,
+        Seq(
+          (RISCV_TYPE.getFunct3(instr_type).asUInt === "b000".U) ->
+            Cat(Fill(24, io_data.data_rdata(7)), io_data.data_rdata(7, 0)),
+          (RISCV_TYPE.getFunct3(instr_type).asUInt === "b001".U) ->
+            Cat(Fill(16, io_data.data_rdata(15)), io_data.data_rdata(15, 0))
+        )
+      )
+    }
+    is(REG_WRITE_SEL.MEM_OUT_ZERO_EXTENDED) {
+      io_reg.reg_write_data := MuxCase(
+        io_data.data_rdata,
+        Seq(
+          (RISCV_TYPE.getFunct3(instr_type).asUInt === "b100".U) ->
+            Cat(0.U(24.W), io_data.data_rdata(7, 0)),
+          (RISCV_TYPE.getFunct3(instr_type).asUInt === "b101".U) ->
+            Cat(0.U(16.W), io_data.data_rdata(15, 0))
+        )
+      )
+    }
   }
 
   // Control unit inputs

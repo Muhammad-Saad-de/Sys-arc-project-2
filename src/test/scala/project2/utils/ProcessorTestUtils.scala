@@ -221,8 +221,9 @@ object ProcessorTestUtils extends ChiselSim {
   ): Unit = {
     executeInstruction(core, instruction)
     expectMemoryRequest(core, expected_state)
-    core.clock.step()
-    core.clock.step()
+    while (!core.io_rvfi.rvfi_valid.peek().litToBoolean) {
+      core.clock.step()
+    }
     evaluateRVFI(core, expected_state)
   }
 

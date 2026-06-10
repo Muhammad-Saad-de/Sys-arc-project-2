@@ -49,7 +49,7 @@ class FiFOCacheTest
     missed should be(true)
 
     dut.clock.step()
-
+    dut.mem_io.data_gnt.poke(false.B)
   }
 
   def expectHit(dut: FIFOCache, addr: BigInt, data: BigInt): Unit = {
