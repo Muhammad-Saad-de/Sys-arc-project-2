@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 lazy val root = (project in file("."))
   .settings(
     name := "RISC-V",
-    Compile / compile := (Compile / compile).dependsOn(scalafmtAll).value,
+    Compile / compile := (Compile / compile).value,
     // autoAPIMappings := true,
     apiMappings ++= {
       val cp: Seq[Attributed[File]] = (Compile / fullClasspath).value
