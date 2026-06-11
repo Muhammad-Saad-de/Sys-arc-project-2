@@ -9,10 +9,20 @@ import RISCV.model._
 class ControlUnit extends AbstractControlUnit {
   val stalled = WireInit(STALL_REASON.NO_STALL)
   val was_stalled = RegInit(STALL_REASON.NO_STALL)
+  val seen_gnt = RegInit(false.B)
+
   when(~io_reset.rst_n) {
     was_stalled := STALL_REASON.NO_STALL
+    seen_gnt := false.B
   }.otherwise {
     was_stalled := stalled
+    when(io_ctrl.data_gnt) {
+      seen_gnt := true.B
+    }.elsewhen(
+      stalled === STALL_REASON.NO_STALL && was_stalled === STALL_REASON.NO_STALL
+    ) {
+      seen_gnt := false.B
+    }
   }
 
   io_ctrl.stall := stalled
@@ -39,6 +49,14 @@ class ControlUnit extends AbstractControlUnit {
           REG_WRITE_SEL.MEM_OUT_ZERO_EXTENDED,
           REG_WRITE_SEL.MEM_OUT_SIGN_EXTENDED
         )
+      }
+    }.otherwise {
+      stalled := STALL_REASON.EXECUTION_UNIT
+      when(!seen_gnt) {
+        io_ctrl.data_req := true.B
+        when(RISCV_TYPE.getOP(io_ctrl.instr_type) === RISCV_OP.STORE) {
+          io_ctrl.data_we := true.B
+        }
       }
     }
   }.otherwise {
