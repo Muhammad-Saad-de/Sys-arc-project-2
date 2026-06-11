@@ -40,6 +40,21 @@ class ControlUnit extends AbstractControlUnit {
           REG_WRITE_SEL.MEM_OUT_SIGN_EXTENDED
         )
       }
+    }.otherwise {
+      stalled := STALL_REASON.EXECUTION_UNIT
+      io_ctrl.data_req := true.B
+      io_ctrl.alu_control := ALU_CONTROL.ADD
+      io_ctrl.alu_op_1_sel := ALU_OP_1_SEL.RS1
+      io_ctrl.alu_op_2_sel := ALU_OP_2_SEL.IMM
+      io_ctrl.data_be := Fill(
+        2,
+        RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(1)
+      ) ## RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(1, 0).orR ## 1.U(1.W)
+      when(RISCV_TYPE.getOP(io_ctrl.instr_type) === RISCV_OP.STORE) {
+        io_ctrl.data_we := true.B
+      }.otherwise {
+        io_ctrl.data_we := false.B
+      }
     }
   }.otherwise {
     switch(RISCV_TYPE.getOP(io_ctrl.instr_type)) {
