@@ -21,10 +21,12 @@ class Prefetcher extends AbstractCache {
   val pending_be = RegInit(0.U(4.W))
   val pending_wdata = RegInit(0.U(32.W))
 
-  // compute stride from current regs (before update)
+  // tracks an in-flight core read so history commits even after data_req drops
+  val read_active = RegInit(false.B)
+  val read_addr = RegInit(0.U(32.W))
+
   val cur_stride = addr2 - addr1
 
-  // defaults
   core_io.data_gnt := false.B
   core_io.data_rdata := 0.U
   mem_io.data_req := false.B
@@ -72,24 +74,31 @@ class Prefetcher extends AbstractCache {
     when(mem_io.data_gnt) {
       core_io.data_gnt := true.B
       core_io.data_rdata := mem_io.data_rdata
+    }
 
-      when(!core_io.data_we) {
-        // valid_count before update
-        val cnt = valid_count
-        val do_pf = cnt >= 2.U &&
-          (core_io.data_addr - addr2 === cur_stride) &&
-          cur_stride =/= 0.U
+    when(!mem_io.data_gnt && !core_io.data_we) {
+      read_active := true.B
+      read_addr := core_io.data_addr
+    }
+  }
 
-        addr0 := addr1
-        addr1 := addr2
-        addr2 := core_io.data_addr
-        valid_count := Mux(cnt < 3.U, cnt + 1.U, 3.U)
+  // commit a completed read into the address history, independent of data_req
+  when(read_active && mem_io.data_gnt) {
+    read_active := false.B
 
-        when(do_pf) {
-          prefetching := true.B
-          stored_prefetch_addr := core_io.data_addr + cur_stride
-        }
-      }
+    val cnt = valid_count
+    val do_pf = cnt >= 2.U &&
+      (read_addr - addr2 === cur_stride) &&
+      cur_stride =/= 0.U
+
+    addr0 := addr1
+    addr1 := addr2
+    addr2 := read_addr
+    valid_count := Mux(cnt < 3.U, cnt + 1.U, 3.U)
+
+    when(do_pf) {
+      prefetching := true.B
+      stored_prefetch_addr := read_addr + cur_stride
     }
   }
 
@@ -105,5 +114,7 @@ class Prefetcher extends AbstractCache {
     pending_we := false.B
     pending_be := 0.U
     pending_wdata := 0.U
+    read_active := false.B
+    read_addr := 0.U
   }
 }
